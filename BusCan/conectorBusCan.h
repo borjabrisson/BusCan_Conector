@@ -90,8 +90,8 @@ protected: // Ejecución de comandos.
 	string getArgs(string msg);
 	
 protected:
-	string partialHex(int dec);
-	string HexToStr(int dec);
+	string partialHex(int dec, int base=16);
+	string HexToStr(int dec, int base=16);
 
 	void setCommand();
 	void setNameCommand();
@@ -102,6 +102,7 @@ protected:
 	virtual void responseAction(string);
 	
 	string StrToDbHex(string text);
+	string translateCardCode(string code);
 	
 public:
 	conectorBusCan();

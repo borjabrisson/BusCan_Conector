@@ -1,5 +1,5 @@
-CC := g++
-BASEFLAGS= -lpthread ${MySQLFLAGS}
+CC := g++ -std=c++03
+BASEFLAGS=  -lpthread ${MySQLFLAGS}
 CPPFLAGS = -O0 -g3 -Wall -c -fmessage-length=0  -MMD -MP
 MySQLFLAGS = `mysql_config --cflags --libs`
 

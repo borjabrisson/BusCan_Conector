@@ -15,10 +15,10 @@ conectorBusCan::conectorBusCan() {
 	this->temp =0;
 }
 
-string conectorBusCan::partialHex(int dec) {
+string conectorBusCan::partialHex(int dec, int base) {
 	string numeroHex = "";
 	stringstream stream;
-	if (dec < 16) {
+	if (dec < base) {
 		switch (dec) {
 		case 10:
 			numeroHex = "A";
@@ -48,23 +48,31 @@ string conectorBusCan::partialHex(int dec) {
 	return "error";
 }
 
-string conectorBusCan::HexToStr(int dec) {
+string conectorBusCan::HexToStr(int dec, int base) {
 	int cociente = 16, residuo = 0;
 	string numeroHex = "", numeroHex1 = "";
 
-	while (dec >= 16) {
-		cociente = dec / 16;
-		residuo = dec % 16;
+	while (dec >= base) {
+		cociente = dec / base;
+		residuo = dec % base;
 		dec = cociente;
-		numeroHex1 = partialHex(residuo);
+		numeroHex1 = partialHex(residuo,base);
 		numeroHex = numeroHex1 + numeroHex;
 		dec = cociente;
 	}
-	numeroHex1 = partialHex(dec);
+	numeroHex1 = partialHex(dec,base);
 	numeroHex = numeroHex1 + numeroHex;
 	if (numeroHex.length() == 1)
 		numeroHex = "0" + numeroHex;
 	return numeroHex;
+}
+
+int conectorBusCan::StrToInt(string id) {
+	if (id[0] > '9')
+		id[0] -= 7;
+	if (id[1] > '9')
+		id[1] -= 7;
+	return ((id[0] - 48) * 16) + (id[1] - 48);
 }
 
 conectorBusCan::~conectorBusCan() {
@@ -107,14 +115,6 @@ string conectorBusCan::calculateCRC(string command) {
 	}
 	amount = amount % 256;
 	return this->HexToStr(amount);
-}
-
-int conectorBusCan::StrToInt(string id) {
-	if (id[0] > '9')
-		id[0] -= 7;
-	if (id[1] > '9')
-		id[1] -= 7;
-	return ((id[0] - 48) * 16) + (id[1] - 48);
 }
 
 bool conectorBusCan::buildEmptyCmd(string cmd, string node) {
@@ -198,6 +198,9 @@ bool conectorBusCan::exec(string command, string node, string args) {
 		break;
 	case cm_TxDigitalInput:
 		this->buildEmptyCmd(id, node);
+		break;
+	default:
+		cout << "comando inexistente:" <<command<<":"<<node<<":"<<args<< endl;
 		break;
 	}
 	return false;
@@ -295,8 +298,17 @@ string conectorBusCan::StrToDbHex(string text){
 	for(unsigned int i =0;i< text.size();i++){
 		out += this->HexToStr(text[i]);
 	}
-	cout << "StrToDbHex valor de entrada:: "<<text<<"  valor devuelto"<< out <<endl;
+	//cout << "StrToDbHex valor de entrada:: "<<text<<"  valor devuelto"<< out <<endl;
 	return out;
+}
+
+string conectorBusCan::translateCardCode(string code){
+	string content;
+	for(int i=0;i<code.length(); i+=2){
+		content.push_back((char)StrToInt(code.substr(i,2)));
+	}
+	return content;
+
 }
 
 // CFG previa: 02 B2 06 F0E00A0A6300 D2

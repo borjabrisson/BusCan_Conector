@@ -22,22 +22,28 @@ enum apiCommand{
 // 	api_DenyAccess=,
 	api_SetText=0x90,
 	api_ClearText=0x91,
-	api_SendMessage=0x92
+	api_SendMessage=0x92,
 // 	api_Start=,
 // 	api_Stop=,
-// 	api_Scan=,
+ 	api_Scan=0x99
 };
 
 class apiBusCan : public conectorBusCan{
+private: // Atributos
+	int TestMode;
 protected:
 	virtual void responseAction(string);
 	
 	
 	void setText(string msg,string node);
+	void sendMsg(string msg,string node);
 	void writeText(string msg,string node);
 	void writeLine(int line,string text,string node);
 	
 	void setApiCmd();	
+	void ActiveResponseAction(string cmd,string node,string args);
+	void TestResponseAction(string cmd,string node,string args);
+
 public:
 	apiBusCan();
 	virtual ~apiBusCan();

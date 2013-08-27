@@ -58,6 +58,10 @@ void requestHandler::listener(){
     }
         
 	msg = buffer;
+	if (msg[msg.length()-1]== '\n'){
+			if (msg[msg.length()-2]== '\r') msg.erase(msg.length()-2,2);
+			else msg.erase(msg.length()-1,1);
+	}
 	posSeparator = msg.find("::");
 	cmd = msg.substr(0,posSeparator);	
 	
@@ -67,7 +71,8 @@ void requestHandler::listener(){
 	args = msg.substr(posSeparator+2);
 	
 	buscan.exec(cmd,node,args);
-	
+
+	//	cout << "Mensaje Recibido . "<< msg << "Tamaño ."<< msg.length()<<" "<< msg.size()<< endl;
     printf("Here is the message(%d): %s\n",sockfd,buffer);
     n = write(sockfd,OkMsg.c_str(),OkMsg.length());
     if (n < 0) 
