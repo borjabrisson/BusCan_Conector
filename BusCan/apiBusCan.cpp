@@ -15,6 +15,12 @@ apiBusCan::apiBusCan() {
 apiBusCan::~apiBusCan() {
 	// TODO Auto-generated destructor stub
 }
+void apiBusCan::execCmdList(list<itemCmdList> cmd){
+	list<itemCmdList>::iterator it;
+	for(it=cmd.begin();it!= cmd.end();it++){
+		exec((*it)["command"],(*it)["node"],(*it)["args"]);
+	}
+}
 
 bool apiBusCan::exec(string command, string node, string args) {
 	string id = commandsName[command];

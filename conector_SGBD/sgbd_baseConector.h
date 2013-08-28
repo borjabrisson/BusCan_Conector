@@ -21,35 +21,36 @@ using namespace std;
 
 class sgbd_baseConector {
 protected:
-	MYSQL *myData;
-	string username;
-	string pass;
-	string host;
-	string db;
+        MYSQL *myData;
+        string username;
+        string pass;
+        string host;
+        string db;
 
-	string msgSP; // mesage Store Procedure.
-	int port;
+        string msgSP; // mesage Store Procedure.
+        int port;
 protected:
+        field_type translade(list<string> order,MYSQL_ROW res);
+        void setMessage(map<string,string> data);
+        map<string,string> resultSP();
 
-	void setMessage(map<string,string> data);
-	map<string,string> resultSP();
-	
-	bool commit();
-	bool rollback();
+        bool commit();
+        bool rollback();
 
-	map<string,string> get_row(MYSQL_ROW &row,MYSQL_RES *res);
-	
+        map<string,string> get_row(MYSQL_ROW &row,MYSQL_RES *res);
+
+
 public:/*
-	sgbd_baseConector();
-	~sgbd_baseConector();*/
-	
-	sgbd_baseConector();
-	int conect(string db = "");
-	int desconect();
+        sgbd_baseConector();
+        ~sgbd_baseConector();*/
 
-	int query(string db, string clause,list<field_type> &record);
-	int procedure(string db, string clause);
+        sgbd_baseConector();
+        int conect(string db = "");
+        int desconect();
 
-	string msgLastProcedure();
+        int query(string db, string clause,list<field_type> &record);
+        int procedure(string db, string clause);
+
+        string msgLastProcedure();
 };
 #endif /* SGBD_BASECONECTOR_H_ */

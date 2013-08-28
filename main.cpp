@@ -27,29 +27,71 @@
 using namespace std;
 #define ENABLE_SERIAL_PORT_EVENT
 
-int main( int argc, char *argv[] )
-{
-	apiBusCan conector;
-	serverIP server;
-	string cmd, node,args;
-	
+apiBusCan conector;
+serverIP server;
+void pruebaAlarma() {
+	conector.exec("Reset", "02", "2");
+	for (int i = 0; i < 10; i++) {
+		conector.exec("ActiveLed/Buzzer", "02", "0202");
+		sleep(1);
+	}
+}
+
+void pruebaCMDList() {
+	map<string, string> linea;
+	list<itemCmdList> lista;
+
+	linea["command"] = "setText";
+	linea["node"] = "02";
+	linea["args"] = "2";
+	lista.push_back(linea);
+
+	linea["command"] = "setText";
+	linea["args"] = "Pruebitaaaaa";
+	lista.push_back(linea);
+
+	linea["command"] = "sendMessage";
+	linea["args"] = "Borramee papii";
+	lista.push_back(linea);
+	conector.execCmdList(lista);
+}
+int main(int argc, char *argv[]) {
+	//apiBusCan conector;
+	//serverIP server;
+	string cmd, node, args;
+
 	conector.Open();
 	// 	conector.Open("/dev/ttyS0");
 
 	server.setBusCanFD(conector.getFD());
 	conector.launchListener();
 	server.start();
-	while(true){
-		cout << "comando: ";	cin >> cmd;
-		if (cmd == "exit") break;
-		cout << "Nodo: ";		cin >> node;
-		cout << "ARGS: ";		cin >> args;
-		conector.exec(cmd,node,args);
+
+	//pruebaCMDList();
+	//pruebaAlarma();
+
+	list<field_type> record;
+	conector.mysql.procedure("amupark", "OnStart()");
+	list<field_type>::iterator it;
+	for (it = record.begin(); it != record.end(); it++) {
+		cout << (*it)["Tables_in_amupark"]<< endl;
 	}
-  //  Set_Configure_Port(fd,OldConf);     // Restituyo la antigua configuración del puerto.
+
+	while (true) {
+		cout << "comando: ";
+		cin >> cmd;
+		if (cmd == "exit")
+			break;
+		cout << "Nodo: ";
+		cin >> node;
+		cout << "ARGS: ";
+		cin >> args;
+		conector.exec(cmd, node, args);
+	}
+	//  Set_Configure_Port(fd,OldConf);     // Restituyo la antigua configuración del puerto.
 	server.free();
-	conector.Close();          // Cierro el puerto serie.
-    
+	conector.Close(); // Cierro el puerto serie.
+
 	printf("\nHasta la proxima\n");
 	return 0;
 }

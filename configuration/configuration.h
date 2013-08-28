@@ -12,7 +12,7 @@ using namespace std;
 
 
 #define ERROR_OUT 
-#define DEBUG_OUT
+//#define DEBUG_OUT
 
 inline void push_Error(string msg){
 	#ifdef ERROR_OUT
@@ -32,9 +32,9 @@ typedef map<string,string> field_type;
 #define PORT_TCP 5005
 #define HOST_IP "127.0.0.1"
 
-#define SGBD_USER_DEFAULT ""
-#define SGBD_PASS_DEFAULT ""
-#define SGBD_HOST_DEFAULT HOST_IP
+#define SGBD_USER_DEFAULT "buscan"
+#define SGBD_PASS_DEFAULT "1234"
+#define SGBD_HOST_DEFAULT "192.168.35.220"
 #define SGBD_DB_DEFAULT "test"
 
 

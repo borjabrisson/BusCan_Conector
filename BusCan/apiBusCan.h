@@ -9,6 +9,7 @@
 #define APIBusCAN_H_
 
 #include "conectorBusCan.h"
+#include "../conector_SGBD/sgbd_baseConector.h"
 
 enum apiCommand{
 // 	api_Init=,
@@ -27,10 +28,12 @@ enum apiCommand{
 // 	api_Stop=,
  	api_Scan=0x99
 };
-
+typedef map<string,string> itemCmdList;
 class apiBusCan : public conectorBusCan{
-private: // Atributos
+public: // Atributos
 	int TestMode;
+	sgbd_baseConector mysql;
+
 protected:
 	virtual void responseAction(string);
 	
@@ -44,7 +47,9 @@ protected:
 	void ActiveResponseAction(string cmd,string node,string args);
 	void TestResponseAction(string cmd,string node,string args);
 
+
 public:
+	void execCmdList(list<itemCmdList> cmd);
 	apiBusCan();
 	virtual ~apiBusCan();
 	
