@@ -8,20 +8,64 @@
 #include "apiBusCan.h"
 
 apiBusCan::apiBusCan() {
-	this->TestMode=1;
+	this->TestMode = 0;
+	LedPeriod = 10;
+	BuzzerAllowPeriod=10;
+	BuzzerDenyPeriod=10;
+	MessagePeriod=25;
+	RelayPeriod=3;
 	this->setApiCmd();
 }
 
 apiBusCan::~apiBusCan() {
 	// TODO Auto-generated destructor stub
 }
-void apiBusCan::execCmdList(list<itemCmdList> cmd){
+void apiBusCan::execCmdList(list<itemCmdList> cmd) {
 	list<itemCmdList>::iterator it;
-	for(it=cmd.begin();it!= cmd.end();it++){
-		exec((*it)["command"],(*it)["node"],(*it)["args"]);
+	for (it = cmd.begin(); it != cmd.end(); it++) {
+		cout << (*it)["command"] << "," << HexToStr(atoi((*it)["node"].c_str()))
+				<< "," << (*it)["args"] << endl;
+		exec((*it)["command"], HexToStr(atoi((*it)["node"].c_str())),
+				(*it)["args"]);
 	}
 }
 
+void apiBusCan::scan(string args) {
+	int comma = args.find(",");
+	int init = 1, max = 256;
+	if (comma != -1) {
+		init = atoi(args.substr(0, comma).c_str());
+		max = atoi(args.substr(comma + 1).c_str());
+	}
+	for (int i = init; i < max; i++) {
+		conectorBusCan::exec("Reset", this->HexToStr(i));
+	}
+}
+
+void apiBusCan::start() {
+	this->TestMode = 0;
+	this->runProcedure("OnStart()","01");
+}
+void apiBusCan::allowAccess(string node,string msg){
+	this->exec("sendMessage",node,msg);
+	this->exec("ActiveLed/Buzzer",node,"00"+this->HexToStr(LedPeriod));
+	this->exec("ActiveLed/Buzzer",node,"02"+this->HexToStr(BuzzerAllowPeriod));
+	this->exec("CloseRelay",node,"00"+this->HexToStr(RelayPeriod));
+
+}
+
+void apiBusCan::denyAccess(string node,string msg){
+	this->exec("sendMessage",node,msg);
+	this->exec("ActiveLed/Buzzer",node,"01"+this->HexToStr(LedPeriod));
+	this->alarm(3,node);
+	//this->exec("ActiveLed/Buzzer",node,"02"+this->HexToStr(BuzzerDenyPeriod));
+}
+void apiBusCan::alarm(int seconds,string node){
+	for (int i = 0; i < seconds; i++) {
+			exec("ActiveLed/Buzzer", node, "0202");
+			sleep(1);
+		}
+}
 bool apiBusCan::exec(string command, string node, string args) {
 	string id = commandsName[command];
 	switch (StrToInt(id)) {
@@ -36,22 +80,35 @@ bool apiBusCan::exec(string command, string node, string args) {
 		return conectorBusCan::exec("ClrDisplay", node);
 		break;
 	case api_SendMessage:
-		sendMsg(args,node);
+		sendMsg(args, node);
 		break;
-	case api_Scan:{
-		int comma = args.find(",");
-		int init=1, max=256;
-		if (comma != -1){
-			init = atoi(args.substr(0,comma).c_str());
-			max = atoi(args.substr(comma+1).c_str());
-		}
-		for(int i=init;i<max;i++){
-			conectorBusCan::exec("Reset",this->HexToStr(i));
-		}
+	case api_Scan: {
+		this->scan(args);
 		break;
 	}
+	case api_Start:
+		this->start();
+		break;
+	case api_SetMode:
+		if (args == "Active")	this->start();
+		else
+			this->TestMode=1;
+		break;
+	case api_ChangeHost:
+		this->mysql.setHost(args);
+		break;
+	case api_AllowAccess:
+			this->allowAccess(node,args);
+		break;
+	case api_DenyAccess:
+		this->denyAccess(node,args);
+		break;
+	case api_Init:	case api_End:	case api_SetCFG:	case api_GetNodeCFG:
+	case api_SetNodeCFG:
+	case api_Stop:
+		cout << "Funcion temporalmente no implementada: " << command << endl;
+		break;
 	default:
-		cout << "Entra por el default de apiBusCan::exec" << endl;
 		return conectorBusCan::exec(command, node, args);
 		break;
 	}
@@ -61,12 +118,25 @@ bool apiBusCan::exec(string command, string node, string args) {
 void apiBusCan::setApiCmd() {
 	map<string, string>::iterator it;
 	map<string, string> cmd;
-	cmd.insert(pair<string, string>("90", "setText"));
-	cmd.insert(pair<string, string>("91", "clearText"));
-	cmd.insert(pair<string, string>("92", "sendMessage"));
-	cmd.insert(pair<string, string>("93", "reset"));
-	cmd.insert(pair<string, string>("94", "test"));
-	cmd.insert(pair<string, string>("99", "scan"));
+	cmd.insert(pair<string, string>("90", "init"));
+	cmd.insert(pair<string, string>("91", "end"));
+	cmd.insert(pair<string, string>("92", "reset"));
+	cmd.insert(pair<string, string>("93", "test"));
+
+	cmd.insert(pair<string, string>("94", "setCFG"));
+	cmd.insert(pair<string, string>("95", "getNodeCFG"));
+	cmd.insert(pair<string, string>("96", "setNodeCFG"));
+	cmd.insert(pair<string, string>("97", "allowAccess"));
+	cmd.insert(pair<string, string>("98", "denyAccess"));
+	cmd.insert(pair<string, string>("99", "setText"));
+
+	cmd.insert(pair<string, string>("9A", "clearText"));
+	cmd.insert(pair<string, string>("9B", "sendMessage"));
+	cmd.insert(pair<string, string>("9C", "start"));
+	cmd.insert(pair<string, string>("9D", "stop"));
+	cmd.insert(pair<string, string>("9E", "scan"));
+ 	cmd.insert(pair<string, string>("9F", "setMode"));
+ 	cmd.insert(pair<string, string>("A0", "changeHost"));
 
 	for (it = cmd.begin(); it != cmd.end(); it++) {
 		commandsID[(*it).first] = (*it).second;
@@ -76,27 +146,33 @@ void apiBusCan::setApiCmd() {
 
 void apiBusCan::responseAction(string msg) {
 	string cmd, node, args;
-	cmd = this->getCMD(msg);	node = this->getNode(msg);	args = this->getArgs(msg);
+	cmd = this->getCMD(msg);
+	node = this->getNode(msg);
+	args = this->getArgs(msg);
 
-	if (this->TestMode)this->TestResponseAction(cmd,node,args);
-	else this->ActiveResponseAction(cmd,node,args);
+	if (this->TestMode)
+		this->TestResponseAction(cmd, node, args);
+	else
+		this->ActiveResponseAction(cmd, node, args);
 }
 
 void apiBusCan::setText(string msg, string node) {
-	writeText(msg,node);
+	writeText(msg, node);
 }
 
-void apiBusCan::sendMsg(string msg,string node){
-	exec("SaveAndRestoreDisplay",node,HexToStr(25));
-	writeText(msg,node);
+void apiBusCan::sendMsg(string msg, string node) {
+	exec("SaveAndRestoreDisplay", node, HexToStr(MessagePeriod));
+	writeText(msg, node);
 }
 
 void apiBusCan::writeLine(int line, string text, string node) {
 	int offset = 0, size = text.length();
 	string buffer = "";
 	int nblock = 0;
-	if (size == 0) return;
-	if (line == 2) offset = 64;
+	if (size == 0)
+		return;
+	if (line == 2)
+		offset = 64;
 	if (size > 20) {
 		text.substr(0, 20);
 		size = 20;
@@ -130,62 +206,104 @@ void apiBusCan::setFD(int fd) {
 	this->conector.setFD(fd);
 }
 
-void apiBusCan::TestResponseAction(string cmd,string node,string args){
+void apiBusCan::TestResponseAction(string cmd, string node, string args) {
 	string msg;
 	char car;
 
 	switch (StrToInt(cmd)) {
-		case cm_OnFcnKey:
-			exec("ClrDisplay", node);
-				this->writeLine(1,"Md Tester Nodo:"+this->HexToStr(this->StrToInt(node),10),node);
-			car =  StrToInt(args);
-			msg = (string)"Tecla pulsada: "+ car;
-			this->writeLine(2,msg,node);
-			if (car == 'A') this->TestMode=0;
-			break;
-		case cm_OnDigitalInput:
-			break;
-		case cm_OnTrack:
-			exec("ClrDisplay", node);
-				this->writeLine(1,"Md Tester Nodo:"+this->HexToStr(this->StrToInt(node),10),node);
-			cout << "valor de tarjeta "<< args<<" ## "<<translateCardCode(args)<<endl;
-			if(args[0] == '*') args = args.substr(1);
-			this->writeLine(2,args,node);
-			break;
-		case res_SaveAndRestoreDisplay:
-			cout << "res_SaveAndRestoreDisplay "<< args << endl;
-			break;
-		case res_TestLink:	case res_Reset:	case res_GetFirmware:
-		/*case res_SaveAndRestoreDisplay:*/	case res_OutputPort: case res_GetCFG:
-			exec("ClrDisplay", node);
-				this->writeLine(1,"Md Tester Nodo:"+this->HexToStr(this->StrToInt(node),10),node);
-			cout << "Se ha recibido una respuesta a un evento previo " + cmd<< endl;
-			this->writeLine(2,"Esperando Accion",node);
-			break;
+	case cm_OnFcnKey:
+		exec("ClrDisplay", node);
+		this->writeLine(1,
+				"Md Tester Nodo:" + this->HexToStr(this->StrToInt(node), 10),
+				node);
+		car = StrToInt(args);
+		msg = (string) "Tecla pulsada: " + car;
+		this->writeLine(2, msg, node);
+		if (car == 'A')
+			this->start();
+		break;
+	case cm_OnDigitalInput:
+		break;
+	case cm_OnTrack:
+		exec("ClrDisplay", node);
+		this->writeLine(1,
+				"Md Tester Nodo:" + this->HexToStr(this->StrToInt(node), 10),
+				node);
+		cout << "valor de tarjeta " << args << " ## " << translateCardCode(args)
+				<< endl;
+		if (args[0] == '*')
+			args = args.substr(1);
+		this->writeLine(2, args, node);
+		break;
+	case res_SaveAndRestoreDisplay:
+		cout << "res_SaveAndRestoreDisplay " << args << endl;
+		break;
+	case res_TestLink:
+	case res_Reset:
+	case res_GetFirmware:
+		/*case res_SaveAndRestoreDisplay:*/
+	case res_OutputPort:
+	case res_GetCFG:
+		exec("ClrDisplay", node);
+		this->writeLine(1,
+				"Md Tester Nodo:" + this->HexToStr(this->StrToInt(node), 10),
+				node);
+		cout << "Se ha recibido una respuesta a un evento previo " + cmd
+				<< endl;
+		this->writeLine(2, "Esperando Accion", node);
+		break;
 	}
 }
 
-void apiBusCan::ActiveResponseAction(string cmd,string node,string args){
+void apiBusCan::ActiveResponseAction(string cmd, string node, string args) {
 	switch (StrToInt(cmd)) {
-		case cm_OnFcnKey:
-			cout << "Tecla respondida: " << (char) StrToInt(args) << endl;
-			exec("ClrDisplay", node);
-			exec("WrInmDisplay", node, "00" + args);
-			break;
-		case cm_OnDigitalInput:
-			break;
-		case cm_OnTrack:
-			cout << "Track yeee" << endl;
-			exec("ClrDisplay", node);
-			exec("WrInmDisplay", node, "003031323334");
-			break;
-		case res_TestLink:
-		case res_Reset:
-		case res_GetFirmware:
-		case res_SaveAndRestoreDisplay:
-		case res_OutputPort:
-		case res_GetCFG:
-			cout << "Se ha recibido una respuesta a un evento previo " + cmd << endl;
-			break;
+	case cm_OnFcnKey: {
+		char key = (char) StrToInt(args);
+		string call = (string) "OnFcnKey(" + "2" + ",'" + key + "')";
+		this->runProcedure(call,node);
+	}
+		break;
+	case cm_OnDigitalInput:
+		break;
+	case cm_OnTrack: {
+		if (args[0] == '*')	args = args.substr(1);
+		exec("EjectCard", "02");
+		string call = (string) "OnCard(" + "2" + ",'" + args + "')";
+		this->runProcedure(call,node);
+	}
+		break;
+	case res_TestLink:{
+		string call = (string) "OnResponde(" + "2" + ",'testCtrLink','')";
+		this->runProcedure(call,node);
+	}
+		break;
+	case res_Reset:{
+		string call = (string) "OnResponde(" + "2" + ",'reset','')";
+		this->runProcedure(call,node);
+	}
+		break;
+	case res_GetFirmware:{
+		string call = (string) "OnResponde(" + "2" + ",'getFirmware','"+args+"')";
+		this->runProcedure(call,node);
+	}
+		break;
+	case res_GetCFG:{
+			string call = (string) "OnResponde(" + "2" + ",'getCFG','"+args+"')";
+			this->runProcedure(call,node);
 		}
+			break;
+	case res_SaveAndRestoreDisplay:
+	case res_OutputPort:
+		cout << "Se ha recibido una respuesta a un evento previo " + cmd
+				<< endl;
+		break;
+	}
+}
+
+void apiBusCan::runProcedure(string clause,string node) {
+	if (this->mysql.procedure(SGBD_DB_DEFAULT, clause)) {
+		this->execCmdList(this->mysql.getResultStatment()["commands"]);
+	} else {
+		exec("sendMessage", "02", "Error de conexion");
+	}
 }

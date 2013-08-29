@@ -18,7 +18,7 @@
 #include <list>
 
 using namespace std;
-
+typedef list<field_type> statment;
 class sgbd_baseConector {
 protected:
         MYSQL *myData;
@@ -29,6 +29,7 @@ protected:
 
         string msgSP; // mesage Store Procedure.
         int port;
+        map<string,statment> resultStatment;
 protected:
         field_type translade(list<string> order,MYSQL_ROW res);
         void setMessage(map<string,string> data);
@@ -52,5 +53,7 @@ public:/*
         int procedure(string db, string clause);
 
         string msgLastProcedure();
+        map<string,statment> getResultStatment();
+        void setHost(string host);
 };
 #endif /* SGBD_BASECONECTOR_H_ */

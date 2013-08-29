@@ -55,6 +55,7 @@ void pruebaCMDList() {
 	lista.push_back(linea);
 	conector.execCmdList(lista);
 }
+
 int main(int argc, char *argv[]) {
 	//apiBusCan conector;
 	//serverIP server;
@@ -66,12 +67,13 @@ int main(int argc, char *argv[]) {
 	server.setBusCanFD(conector.getFD());
 	conector.launchListener();
 	server.start();
+	conector.start();
 
 	//pruebaCMDList();
 	//pruebaAlarma();
 
 	list<field_type> record;
-	conector.mysql.procedure("amupark", "OnStart()");
+
 	list<field_type>::iterator it;
 	for (it = record.begin(); it != record.end(); it++) {
 		cout << (*it)["Tables_in_amupark"]<< endl;
@@ -82,6 +84,11 @@ int main(int argc, char *argv[]) {
 		cin >> cmd;
 		if (cmd == "exit")
 			break;
+		if(cmd == "cmd"){
+			conector.mysql.procedure("amupark", "OnStart()");
+				conector.execCmdList(conector.mysql.getResultStatment()["commands"]);
+			continue;
+		}
 		cout << "Nodo: ";
 		cin >> node;
 		cout << "ARGS: ";

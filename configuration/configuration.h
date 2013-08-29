@@ -35,7 +35,7 @@ typedef map<string,string> field_type;
 #define SGBD_USER_DEFAULT "buscan"
 #define SGBD_PASS_DEFAULT "1234"
 #define SGBD_HOST_DEFAULT "192.168.35.220"
-#define SGBD_DB_DEFAULT "test"
+#define SGBD_DB_DEFAULT "amupark"
 
 
 #endif /* CONFIG_H_ */
