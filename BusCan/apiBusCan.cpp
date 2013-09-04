@@ -8,7 +8,7 @@
 #include "apiBusCan.h"
 
 apiBusCan::apiBusCan() {
-	this->TestMode = 0;
+	this->TestMode = 1;
 	LedPeriod = 10;
 	BuzzerAllowPeriod=10;
 	BuzzerDenyPeriod=10;
@@ -150,6 +150,7 @@ void apiBusCan::responseAction(string msg) {
 	node = this->getNode(msg);
 	args = this->getArgs(msg);
 
+cout << "Recibimos:: "<< msg << endl;
 	if (this->TestMode)
 		this->TestResponseAction(cmd, node, args);
 	else
@@ -209,7 +210,6 @@ void apiBusCan::setFD(int fd) {
 void apiBusCan::TestResponseAction(string cmd, string node, string args) {
 	string msg;
 	char car;
-
 	switch (StrToInt(cmd)) {
 	case cm_OnFcnKey:
 		exec("ClrDisplay", node);
@@ -226,6 +226,7 @@ void apiBusCan::TestResponseAction(string cmd, string node, string args) {
 		break;
 	case cm_OnTrack:
 		exec("ClrDisplay", node);
+		exec("EjectCard",node);
 		this->writeLine(1,
 				"Md Tester Nodo:" + this->HexToStr(this->StrToInt(node), 10),
 				node);
@@ -259,7 +260,8 @@ void apiBusCan::ActiveResponseAction(string cmd, string node, string args) {
 	switch (StrToInt(cmd)) {
 	case cm_OnFcnKey: {
 		char key = (char) StrToInt(args);
-		string call = (string) "OnFcnKey(" + "2" + ",'" + key + "')";
+		node = HexToStr(StrToInt(node),10);
+		string call = (string) "OnFcnKey(" + node + ",'" + key + "')";
 		this->runProcedure(call,node);
 	}
 		break;
@@ -267,12 +269,14 @@ void apiBusCan::ActiveResponseAction(string cmd, string node, string args) {
 		break;
 	case cm_OnTrack: {
 		if (args[0] == '*')	args = args.substr(1);
-		exec("EjectCard", "02");
-		string call = (string) "OnCard(" + "2" + ",'" + args + "')";
+
+		exec("EjectCard", node);
+		node = HexToStr(StrToInt(node),10);
+		string call = (string) "OnCard(" + node + ",'" + args + "')";
 		this->runProcedure(call,node);
 	}
 		break;
-	case res_TestLink:{
+	/*case res_TestLink:{
 		string call = (string) "OnResponde(" + "2" + ",'testCtrLink','')";
 		this->runProcedure(call,node);
 	}
@@ -291,7 +295,11 @@ void apiBusCan::ActiveResponseAction(string cmd, string node, string args) {
 			string call = (string) "OnResponde(" + "2" + ",'getCFG','"+args+"')";
 			this->runProcedure(call,node);
 		}
-			break;
+			break;*/
+case res_TestLink:
+case res_Reset:
+case res_GetFirmware:
+case res_GetCFG:
 	case res_SaveAndRestoreDisplay:
 	case res_OutputPort:
 		cout << "Se ha recibido una respuesta a un evento previo " + cmd
@@ -304,6 +312,6 @@ void apiBusCan::runProcedure(string clause,string node) {
 	if (this->mysql.procedure(SGBD_DB_DEFAULT, clause)) {
 		this->execCmdList(this->mysql.getResultStatment()["commands"]);
 	} else {
-		exec("sendMessage", "02", "Error de conexion");
+		exec("sendMessage", node, "Error de conexion");
 	}
 }

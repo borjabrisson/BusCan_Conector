@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
 	server.setBusCanFD(conector.getFD());
 	conector.launchListener();
 	server.start();
-	conector.start();
+	//conector.start();
 
 	//pruebaCMDList();
 	//pruebaAlarma();
