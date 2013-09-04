@@ -373,7 +373,7 @@ void conectorSerial::SERIAL_PORT_EVENT() {
     string input="";
        //Getc_Port(*hPort,c);
      this->Gets_Port(input);
-     printf("[%d]=%s \n",this->fd,input.c_str()); 
+     printf("[%d]=%s \n",this->fd,input.c_str());
      input.clear();
 }
 
@@ -384,7 +384,7 @@ int conectorSerial::WaitForBlock(int time){
 	fds[0].fd = this->fd;
     fds[0].events = POLLRDNORM | POLLIN;
 	ret = poll(fds, 1, time);
-	if (ret < 0){ 
+	if (ret < 0){
 		perror("Se ha producido un error");
 		exit(2);
 	}
@@ -401,7 +401,7 @@ void conectorSerial::Notify_Event(){
 }
 void *conectorSerial::Handle_Thread(void *hPort) {
 	((conectorSerial *) hPort)->Notify_Event();
-	
+
 	return NULL;
 }
 

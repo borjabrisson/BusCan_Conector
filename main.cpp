@@ -72,13 +72,6 @@ int main(int argc, char *argv[]) {
 	//pruebaCMDList();
 	//pruebaAlarma();
 
-	list<field_type> record;
-
-	list<field_type>::iterator it;
-	for (it = record.begin(); it != record.end(); it++) {
-		cout << (*it)["Tables_in_amupark"]<< endl;
-	}
-
 	while (true) {
 		cout << "comando: ";
 		cin >> cmd;
