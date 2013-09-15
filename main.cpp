@@ -1,34 +1,21 @@
 #include "serverIP.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
-#include <sys/types.h> 
-#include <sys/socket.h>
-#include <netinet/in.h>
-
 #include "listen/requestHandler.h"
 #include "configuration/configuration.h"
-
-#include <sys/types.h> 
 
 #include "BusCan/conectorSerial.h"
 #include "BusCan/conectorBusCan.h"
 #include "BusCan/apiBusCan.h"
 
-#include <iostream>
-
-#include <map>
-#include <iostream>
-#include <string>
-#include <list>
-#include <set>
-using namespace std;
+// Es necesario para poder escuchar el Bus Serie sin bloquearse (lanza el hilo). Proviene del conector Serie usado como base.
 #define ENABLE_SERIAL_PORT_EVENT
 
-apiBusCan conector;
-serverIP server;
+// Estos objetos se crean a nivel global para poder hacer distitnas funciones de pruebas, y así modular mejor el código.
+// fíjate que con este uso ya podemos acceder a ellos sin ningún problema.
+
+	apiBusCan conector;
+	serverIP server;
+
+// Es la función inicial que contruí para la temporización de la alarma.
 void pruebaAlarma() {
 	conector.exec("Reset", "02", "2");
 	for (int i = 0; i < 10; i++) {
@@ -37,6 +24,7 @@ void pruebaAlarma() {
 	}
 }
 
+// Prueba incial donde ejecutamos una lista de comandos.
 void pruebaCMDList() {
 	map<string, string> linea;
 	list<itemCmdList> lista;
@@ -57,21 +45,18 @@ void pruebaCMDList() {
 }
 
 int main(int argc, char *argv[]) {
-	//apiBusCan conector;
-	//serverIP server;
 	string cmd, node, args;
 
-	conector.Open();
+	conector.Open(); // Por defecto se utuliza el puerto ttyUSB0
 	// 	conector.Open("/dev/ttyS0");
 
 	server.setBusCanFD(conector.getFD());
-	conector.launchListener();
-	server.start();
+
+	conector.launchListener(); // Se comenzará a escuchar todas las peticiones provenientes por el bus serie.
+	server.start(); // el servidor IP comenzará a escuchar todas las peticiones por el puerto (5050 por defecto)
+
 	//conector.start();
-
-	//pruebaCMDList();
-	//pruebaAlarma();
-
+	// Si queremos que el sistema comienze arrancado debemos quitar el comentario. si no empezará en modo Tester.
 	while (true) {
 		cout << "comando: ";
 		cin >> cmd;
@@ -88,8 +73,8 @@ int main(int argc, char *argv[]) {
 		cin >> args;
 		conector.exec(cmd, node, args);
 	}
-	//  Set_Configure_Port(fd,OldConf);     // Restituyo la antigua configuración del puerto.
-	server.free();
+
+	server.free();    // Dejamos de atender peticiones TCP/IP
 	conector.Close(); // Cierro el puerto serie.
 
 	printf("\nHasta la proxima\n");

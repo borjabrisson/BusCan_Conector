@@ -8,40 +8,26 @@
 #ifndef requestHandler_H_
 #define requestHandler_H_
 
-#include <iostream>
-#include <cstdlib>
-#include <pthread.h>
-
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
-#include <sys/types.h> 
-#include <sys/socket.h>
-#include <netinet/in.h>
-
 #include "../BusCan/apiBusCan.h"
-
-using namespace std;
+#include "../configuration/configuration.h"
 
 #define NUM_THREADS     5
+
+//#define RqtHandlerTest 1
 
 class requestHandler {
 protected:
 	int sockfd;
 	apiBusCan buscan;
+
 protected:
-	static void* print(void *id);
-	
-	static void* threadHandle(void *id);
-	void listener();
+	static void* threadHandle(void *id); // función estática que nos hace de puente para ejecutar el método de la clase deseado.
+	void listener(); // se comunicará con el cliente para obtener el comando y argumentos necesarios.
+	void showRead(); // Leerá los datos enviados y responderá con un mensaje. Luego mostrará por pantalla el mensaje recibido.
 public:
 	requestHandler();
 	virtual ~requestHandler();
-	void run(int ID);
-	
+	void run(int socketID); // lanzamos un hijo manejador indicando el identificador del socket.
 	void setBusCanFD(int fd){
 		buscan.setFD(fd);
 	}

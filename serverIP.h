@@ -8,25 +8,8 @@
 #ifndef SERVERIP_H_
 #define SERVERIP_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-
-#include <map>
-#include <iostream>
-#include <string>
-#include <list>
-#include <set>
-
 #include "configuration/configuration.h"
 #include "listen/requestHandler.h"
-
-using namespace std;
 
 class serverIP {
 protected:
@@ -48,7 +31,6 @@ protected: // functions
 	
 public:
 	serverIP();
-	serverIP(void*&);
 	// Constructor copia:
 	serverIP(const serverIP &obj);
 	~serverIP();

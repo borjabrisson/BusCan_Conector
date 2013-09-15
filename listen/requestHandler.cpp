@@ -16,21 +16,20 @@ requestHandler::~requestHandler() {
 	// TODO Auto-generated destructor stub
 }
 
-void* requestHandler::print(void *id){
-	long sock = (long)id;
+void requestHandler::showRead(){
+	long sock = sockfd;
     int n;
     char buffer[256];
 
     bzero(buffer,256);
-
-    n = read(sock,buffer,255);
+    n = read(sock,buffer,255); // leemos el mensaje recibido.
     if (n < 0)
     {
         perror("ERROR reading from socket");
         exit(1);
     }
     printf("Here is the message(%d): %s\n",sock,buffer);
-    n = write(sock,"I got your message",18);
+    n = write(sock,"I got your message",18); // enviamos nuestra respuesta.
     if (n < 0) 
     {
         perror("ERROR writing to socket");
@@ -40,7 +39,13 @@ void* requestHandler::print(void *id){
 }
 
 void* requestHandler::threadHandle(void *obj){
-	((requestHandler *) obj)->listener();
+	// Si compilamos en modo Test se ejecutará ShowRead, si no, lanzaremos el listener para capturar los comandos
+#if defined(RqtHandlerTest)
+	((requestHandler *) obj)->showRead();
+#else
+    ((requestHandler *) obj)->listener();
+#endif
+
 }
 
 void requestHandler::listener(){
@@ -48,9 +53,8 @@ void requestHandler::listener(){
     char buffer[256];
 	string cmd,node,args,msg, ErrorMsg="Error",OkMsg="OK";
 
-    bzero(buffer,256);
-
-    n = read(sockfd,buffer,255);
+	bzero(buffer,256);
+    n = read(sockfd,buffer,255); // Leemos el mensaje recibido.
     if (n < 0)
     {
         perror("ERROR reading from socket");
@@ -58,11 +62,12 @@ void requestHandler::listener(){
     }
         
 	msg = buffer;
-	if (msg[msg.length()-1]== '\n'){
+	if (msg[msg.length()-1]== '\n'){ // limpiamos el mensaje de caracteres inválidos (\n,\r,\t)
 			if (msg[msg.length()-2]== '\r') msg.erase(msg.length()-2,2);
 			else msg.erase(msg.length()-1,1);
 	}
 	posSeparator = msg.find("::");
+	// Ahora separamos el mensaje (CMD::NODE::ARGS) en sus 3 componentes.
 	cmd = msg.substr(0,posSeparator);	
 	
 	aux = posSeparator;			posSeparator = msg.find("::",aux+1);
@@ -70,11 +75,12 @@ void requestHandler::listener(){
 	node = msg.substr(aux+2,posSeparator-(aux+2));
 	args = msg.substr(posSeparator+2);
 	
+	// Lanzamos el comando enviado.
 	buscan.exec(cmd,node,args);
 
-	//	cout << "Mensaje Recibido . "<< msg << "Tamaño ."<< msg.length()<<" "<< msg.size()<< endl;
-    printf("Here is the message(%d): %s\n",sockfd,buffer);
-    n = write(sockfd,OkMsg.c_str(),OkMsg.length());
+//  printf("Here is the message(%d): %s\n",sockfd,buffer);
+    push_Debug("requestHandler::listener. Msg: "+(string)buffer);
+    n = write(sockfd,OkMsg.c_str(),OkMsg.length()); //Enviamos nuestra respuesta.
     if (n < 0) 
     {
         perror("ERROR writing to socket");
@@ -84,33 +90,15 @@ void requestHandler::listener(){
 	
 }
 
-void requestHandler::run(int ID){
+void requestHandler::run(int socketID){
 	int rc;
 	pthread_t thread;
-	//rc = pthread_create(&thread, NULL,print, (void *)ID);
-	this->sockfd = ID;
+	this->sockfd = socketID;
 	rc =  pthread_create(&thread, NULL, &requestHandler::threadHandle, (void *)this);
-  if (rc){
-	 cout << "Error:unable to create thread," << rc << endl;
-	 exit(-1);
-  }
+	if (rc){
+		cout << "Error:unable to create thread," << rc << endl;
+		exit(-1);
+	}
   //pthread_exit(NULL);
 }
-/*
-void requestHandler::run(int ID)
-{
-   pthread_t threads[NUM_THREADS];
-   int rc;
-   int i;
-   for( i=0; i < NUM_THREADS; i++ ){
-      cout << "Hijo() : creating thread, " << i << endl;
-      rc = pthread_create(&threads[i], NULL,
-    		  &requestHandler::print, (void *)i);
-      if (rc){
-         cout << "Error:unable to create thread," << rc << endl;
-         exit(-1);
-      }
-   }
-   //pthread_exit(NULL);
-}*/
 
